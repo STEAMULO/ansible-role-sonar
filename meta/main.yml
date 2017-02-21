@@ -1,7 +1,12 @@
 ---
 dependencies:
-  - geerlingguy.java
-  - geerlingguy.mysql
+  - name: geerlingguy.java
+    src: geerlingguy.java
+    when: sonar_install_dependencies
+  - name: geerlingguy.mysql
+    src: geerlingguy.mysql
+    when: sonar_install_dependencies
+
 
 galaxy_info:
   author: geerlingguy
