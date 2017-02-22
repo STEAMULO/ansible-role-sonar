@@ -20,3 +20,5 @@ sonar_mysql_allowed_hosts:
   - "localhost"
 
 sonar_install_dependencies: True
+
+sonar_user: sonar

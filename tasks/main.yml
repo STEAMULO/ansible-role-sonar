@@ -4,13 +4,25 @@
     name: "{{ sonar_mysql_database }}"
     state: present
 
-- name: Create a sonar user.
+- name: Create a sonar mysql user.
   mysql_user:
     name: "{{ sonar_mysql_username }}"
     host: "{{ item }}"
     priv: "{{ sonar_mysql_database }}.*:ALL"
     password: "{{ sonar_mysql_password }}"
   with_items: "{{ sonar_mysql_allowed_hosts }}"
+
+- name: Create a sonar unix group.
+  group:
+    name: "{{ sonar_user }}"
+    state: present
+
+- name: Create a sonar unix user.
+  user:
+    name: "{{ sonar_user }}"
+    group: "{{ sonar_user }}"
+    system: yes
+    state: present
 
 - name: Download Sonar.
   get_url:
@@ -22,6 +34,8 @@
     src: "{{ workspace }}/{{ sonar_version_directory }}.zip"
     dest: /usr/local/
     copy: no
+    owner: "{{ sonar_user }}"
+    group: "{{ sonar_user }}"
     creates: /usr/local/sonar/COPYING
 
 - name: Move Sonar into place.
@@ -38,10 +52,24 @@
     state: link
   with_items:
     - /usr/bin/sonar
-    - /etc/init.d/sonar
+
+- name: Create systemd unit file
+  template:
+    src: sonar.service.j2
+    dest: /etc/systemd/system/sonar.service
+    owner: root
+    group: root
+    mode: 0744
 
 - name: Ensure Sonar is running and set to start on boot.
-  service: name=sonar state=started enabled=yes
+  systemd:
+    state: started
+    enabled: yes
+    daemon_reload: yes
+    name: sonar
 
 - name: Make sure Sonar is responding on the configured port.
-  wait_for: port=9000 delay=3 timeout=300
+  wait_for:
+    port: 9000
+    delay: 3
+    timeout: 300
